@@ -59,8 +59,10 @@ select
     ts.total_spent,
    coalesce(a.angry_reviews_count, 0) as angry_reviews_count 
 From customers c
-Left Join total_spent ts on ts.customer_id = c.customer_id
-left join  angry a on a.customer_id = c.customer_id
+Left Join total_spent ts use Index (idx_orders_customer_id )
+	on ts.customer_id = c.customer_id
+left join  angry a USE index( idx_reviews_customer_id)
+	on a.customer_id = c.customer_id
 where c.region = 'Центр'
 order by  total_spent desc
 Limit 10;
