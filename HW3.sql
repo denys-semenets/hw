@@ -307,7 +307,7 @@ SELECT
   EXTRACT(MONTH FROM d) AS month_number,
   EXTRACT(DAY FROM d) AS day_of_month,
   FORMAT_DATE('%A', d) AS day_of_week 
-FROM _generated_dates;
+FROM gen_dates;
 
 CREATE TABLE IF NOT EXISTS prom_dim.FACT_SALES AS
 SELECT
@@ -322,16 +322,16 @@ SELECT
   CAST(so.discount_amount AS NUMERIC) AS discount_amount
 FROM
   prom_stage.stage_orders so
-LEFT JOIN prom_dwh.DIM_ORDER do
+LEFT JOIN prom_dim.DIM_ORDER do
   ON so.order_id = do.order_id_NK
-LEFT JOIN prom_dwh.DIM_CUSTOMER dc
+LEFT JOIN prom_dim.DIM_CUSTOMER dc
   ON so.user_id = dc.user_id_NK
   AND DATE(so.order_timestamp) BETWEEN dc.date_valid_from AND COALESCE(dc.date_valid_to, CURRENT_DATE())
-LEFT JOIN prom_dwh.DIM_PRODUCT dp
+LEFT JOIN prom_dim.DIM_PRODUCT dp
   ON so.product_id = dp.product_id_NK
-LEFT JOIN prom_dwh.DIM_DATETIME dd
+LEFT JOIN prom_dim.DIM_DATETIME dd
   ON DATE(so.order_timestamp) = dd.full_date
-LEFT JOIN prom_dwh.DIM_LOCATION dl
+LEFT JOIN prom_dim.DIM_LOCATION dl
   ON so.address_hash = dl.address_hash_NK;
 
 
@@ -347,12 +347,12 @@ SELECT
   sp.payment_method
 FROM
   prom_stage.stage_payments sp
-LEFT JOIN prom_dwh.DIM_ORDER do
+LEFT JOIN prom_dim.DIM_ORDER do
   ON sp.order_id = do.order_id_NK
-LEFT JOIN prom_dwh.DIM_CUSTOMER dc
+LEFT JOIN prom_dim.DIM_CUSTOMER dc
   ON sp.user_id = dc.user_id_NK
   AND DATE(sp.payment_ts) BETWEEN dc.date_valid_from AND COALESCE(dc.date_valid_to, CURRENT_DATE())
-LEFT JOIN prom_dwh.DIM_DATETIME dd
+LEFT JOIN prom_dim.DIM_DATETIME dd
   ON DATE(sp.payment_ts) = dd.full_date;
 
 CREATE TABLE IF NOT EXISTS prom_dim.FACT_USER_SESSIONS AS
@@ -367,10 +367,10 @@ SELECT
   ss.device_type
 FROM
   prom_stage.stage_sessions ss
-LEFT JOIN prom_dwh.DIM_CUSTOMER dc
+LEFT JOIN prom_dim.DIM_CUSTOMER dc
   ON ss.user_id = dc.user_id_NK
   AND DATE(ss.session_start_ts) BETWEEN dc.date_valid_from AND COALESCE(dc.date_valid_to, CURRENT_DATE())
-LEFT JOIN prom_dwh.DIM_DATETIME dd
+LEFT JOIN prom_dim.DIM_DATETIME dd
   ON DATE(ss.session_start_ts) = dd.full_date;
 
   CREATE SCHEMA IF NOT EXISTS prom_mart;
@@ -390,7 +390,7 @@ SELECT
   ) AS avg_order_value,
   COUNT(DISTINCT fs.customer_key_FK) AS unique_customers
 FROM
-  prom_dwh.FACT_SALES fs
+  prom_dim.FACT_SALES fs
 GROUP BY
   fs.date_key_FK, fs.product_key_FK, fs.location_key_FK;
 
@@ -408,8 +408,8 @@ SELECT
   CAST(NULL AS INT64) AS total_sessions,
   CAST(NULL AS INT64) AS total_product_views
 FROM
-  prom_dwh.FACT_SALES fs
-JOIN prom_dwh.DIM_DATETIME dd
+  prom_dim.FACT_SALES fs
+JOIN prom_dim.DIM_DATETIME dd
   ON fs.date_key_FK = dd.date_key
 GROUP BY
   dd.year_number,
@@ -429,7 +429,7 @@ WITH sales AS (
     0 AS total_product_views,
     0 AS total_add_to_carts
   FROM
-    prom_dwh.FACT_SALES fs
+    prom_dim.FACT_SALES fs
   JOIN prom_dwh.DIM_DATETIME dd
     ON fs.date_key_FK = dd.date_key
   GROUP BY
@@ -446,8 +446,8 @@ WITH sales AS (
     SUM(fus.product_views) AS total_product_views,
     SUM(fus.add_to_carts) AS total_add_to_carts
   FROM
-    prom_dwh.FACT_USER_SESSIONS fus
-  JOIN prom_dwh.DIM_DATETIME dd
+    prom_dim.FACT_USER_SESSIONS fus
+  JOIN prom_dim.DIM_DATETIME dd
     ON fus.date_key_FK = dd.date_key
   GROUP BY
     dd.year_number,
