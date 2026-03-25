@@ -1,6 +1,6 @@
 select
-    cast(plan_id as int) as plan_id,
+    plan_id as plan_id,
     plan_name,
-
-    cast(duration_months as int) as duration_months
+    monthly_price_cents,
+    duration_months as duration_months
 from {{ ref('raw_plans') }}
